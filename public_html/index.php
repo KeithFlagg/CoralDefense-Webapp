@@ -28,7 +28,7 @@ $sec = "15";
 
 <?php
 
-include("database_connect.php");
+include("connect_db.php");
 
 if (mysqli_connect_errno()) {
   echo "Failed to connect to MySQL: " . mysqli_connect_error();
