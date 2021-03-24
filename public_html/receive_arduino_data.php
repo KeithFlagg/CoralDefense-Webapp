@@ -1,10 +1,7 @@
 <?php
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
-$con=mysqli_connect("localhost","id16116035_coraldefense","Password123$","id16116035_coraldefensedb");
-if (!$con) {
-          die("Connection failed: " . mysqli_connect_error());
-   }
+include("connect_db.php");
 $myfile = fopen("newfile.txt", "a");
 $temperature=$_REQUEST['temperature'];
 $humidity=$_REQUEST['humidity'];
