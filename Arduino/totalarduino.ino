@@ -1,8 +1,6 @@
-
-//level switch high signal, shut down fresh water pump and turn of uv bar
-//level switch low turn on uv sterilization and fresh water pump
 #include <dht.h> //Library needed for humidity and temperature sensors
 #include <stdlib.h>
+//defining device pins
 #define bt_state 37
 #define uv_pin 23
 #define he_pin 25
@@ -12,9 +10,8 @@
 #define ls_pin 20
 #define led_pin 53
 #define fwfp_pin 22
-//defining device pins
 #define bt Serial1                       //HC-05 bluetooth chip
-#define esp_module Serial2               //ESP module \
+#define esp_module Serial2               //ESP module 
                                          //all the information relating to the flow sensors
 float flow_rate_ml;                      //keeps track of flow rate
 float flow_volume_ml;                    //keeps track of volume
@@ -26,30 +23,30 @@ const long recieve_time_trigger = 3000;  //triggers after 1000 ms to run code
 const long package_time_trigger = 3200;  //triggers after 4000 ms to run code
 unsigned long recieve_previous_time = 0; //keeps time before the recieve_bt_data code runs
 unsigned long package_previous_time = 0; //keeps time before the package and send code runs
+bool uv_state_tracker = true;            //bool used to track if the UV light is on or off
 dht DHT;                                 //make a dht sensor object to read humidity and temperature
-int bt_error(int);                       //error handlers
-int inboard_error(int);
-int internet_error(int);
-int get_flow_info();                  //get all the information regarding the  flow
-int package_internet_bundle();        //builds the query string that will be elevated to the esp module
-int ascend_internet_bundle();         //send the internet bundle to the esp module
-int recieve_internet_data();          //read the bundle from the espmodule
-int get_he_state();                   //get hall effect state and return
-int get_ls_state();                   //get level switch state and return
-void turn_off_UV();                   //turns off the uv light does not return a value because the call to the pin is void
-void turn_on_UV();                    //turns on the uv light does not return a value because the call to the pin is void
-int state_check(int);                 //state handler for recieved data
-float get_humidity();                 //read humidity and return
-float get_temperature();            //read temperature and return
-void turn_on_fwf_pump();              //turns on the fresh water fill pump
-void turn_off_fwf_pump();             //turns off the freshwater fill pump
-char *convert_float_to_string(float); //converts a float to a string
-void flow_sensor_pulse_counter();     //used to count pulses, keeps time for flowinfo
-int receiver = 0;                     //int that gets read from the phone
-int internet_reciever = 0;            //int that gets read from the esp module
-char query_string[255];               //string that holds the post data
-String holder;
-char *format_array[5];                //string array for formatting sender
+int bt_error(int);                       //error handler
+int inboard_error(int);                  //error handler
+int internet_error(int);                 //error handler
+int get_flow_info();                     //get all the information regarding the flow sensor
+int package_internet_bundle();           //builds the query string that will be elevated to the esp module
+int ascend_internet_bundle();            //send the internet bundle to the esp module
+int recieve_internet_data();             //read the bundle from the espmodule
+int get_he_state();                      //get hall effect state and return
+int get_ls_state();                      //get level switch state and return
+void turn_off_UV();                      //turns off the uv light does not return a value because the call to the pin is void
+void turn_on_UV();                       //turns on the uv light does not return a value because the call to the pin is void
+int state_check(int);                    //state handler for recieved data
+float get_humidity();                    //read humidity and return
+float get_temperature();                 //read temperature and return
+void turn_on_fwf_pump();                 //turns on the fresh water fill pump
+void turn_off_fwf_pump();                //turns off the freshwater fill pump
+char *convert_float_to_string(float);    //converts a float to a string
+void flow_sensor_pulse_counter();        //used to count pulses, keeps ticks for calculating the flow sensor
+int receiver = 0;                        //int that gets read from the datastream
+char query_string[255];                  //string that holds the post data
+String holder;                           //string the converts the char array to string and posts on the esp
+char *format_array[5];                   //string array for formatting floats into strings for easy building
 void setup()
 {
   pinMode(bt_state, INPUT);
@@ -58,6 +55,7 @@ void setup()
   pinMode(he_pin, INPUT);
   pinMode(uv_pin, OUTPUT);
   pinMode(fs_pin, INPUT);
+  pinMode(fwfp_pin, OUTPUT);
   Serial.begin(9600);
   bt.begin(9600);
   esp_module.begin(9600);
@@ -71,12 +69,11 @@ void setup()
 
 void loop()
 {
-  int bt_packagecheck, bt_sendcheck, bt_readcheck;
-  int internet_packagecheck, internet_sendcheck, internet_readcheck;
+  int bt_packagecheck, bt_sendcheck, bt_readcheck;                   //checks that make sure functions run properly
+  int internet_packagecheck, internet_sendcheck, internet_readcheck; //checks that make sure functions run properly
   unsigned long current_time = millis();
   //recieve data timer
-
-  if (current_time - recieve_previous_time >= recieve_time_trigger)
+  if (current_time - recieve_previous_time >= recieve_time_trigger) //timer loop will run when the trigger time is surpassed
   {
     internet_readcheck = recieve_internet_data();
     if (internet_readcheck < 0)
@@ -88,9 +85,8 @@ void loop()
     recieve_previous_time = current_time;
   }
   //package and send timer
-  if (current_time - package_previous_time >= package_time_trigger)
+  if (current_time - package_previous_time >= package_time_trigger) //timer loop will run when the trigger time is surpassed
   {
-    Serial.println("Hello package");
     internet_packagecheck = package_internet_bundle();
     if (internet_packagecheck < 0)
     {
@@ -102,11 +98,11 @@ void loop()
   }
 
 } //eof
-void flow_sensor_pulse_counter()
+void flow_sensor_pulse_counter() //counts up everytime the flow sensor ticks gets reset after get_flow_info() is called
 {
   flow_sensor_pulse_count++;
 }
-char *convert_float_to_string(float n, int stringlength, int precision)
+char *convert_float_to_string(float n, int stringlength, int precision) //formatting for the sprintf function it doesn't take in floats so floats need to be converted to cstrings
 {
   char buff[16];
   char *float_to_be_converted = buff;
@@ -115,7 +111,6 @@ char *convert_float_to_string(float n, int stringlength, int precision)
 }
 float get_humidity()
 {
-
   DHT.read11(dht_pin);
   float humidity = DHT.humidity;
   Serial.print("HUM:");
@@ -138,25 +133,27 @@ int get_he_state()
   Serial.print("HESTATE:");
   Serial.print(hestate);
   Serial.print("\n");
-
   return hestate;
 }
 void turn_off_UV()
 {
   Serial.println("Turning off UV light");
   digitalWrite(uv_pin, HIGH);
+  uv_state_tracker = false;
 }
 void turn_on_UV()
 {
   Serial.println("Turning on UV light");
   digitalWrite(uv_pin, LOW);
+  uv_state_tracker = true;
 }
 int get_uv_state()
 {
-  int uvstate = digitalRead(uv_pin);
+  int uvstate = uv_state_tracker;
   Serial.print("UVSTATE:");
   Serial.print(uvstate);
   Serial.print("\n");
+  return uvstate;
 }
 int get_ls_state()
 {
@@ -252,7 +249,6 @@ int inboard_error(int code)
 }
 int package_internet_bundle()
 {
-  Serial.println("internet2");
   get_flow_info();
   format_array[0] = convert_float_to_string(get_temperature(), 5, 2);
   format_array[1] = convert_float_to_string(get_humidity(), 5, 2);
@@ -273,11 +269,10 @@ int package_internet_bundle()
 
 int ascend_internet_bundle()
 {
-  Serial.println("5internet3");
   Serial.println("Sending String to esp module:");
   Serial.println(query_string);
   String holder(query_string);
-  holder.replace(" ","");
+  holder.replace(" ", "");
   holder.toLowerCase();
   Serial.println(holder);
   esp_module.println(holder);
@@ -298,7 +293,7 @@ int internet_error(int code)
     return -54;
   }
 }
-int recieve_internet_data()
+int recieve_internet_data() //parse the serial communication with the esp module for the command int and response
 {
   String ignore = Serial2.readStringUntil('#');
   int response = Serial2.parseInt();
