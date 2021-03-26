@@ -1,23 +1,23 @@
 #include <ESP8266WiFi.h>
 #define mega_board Serial
-const char *ssid = "Lens's iPhone";
-const char *password = "coraldefense";
-const char *host = "coraldefense.000webhostapp.com";
-const int httpPort = 80;
-String posturl = "/recieve_arduino_data.php?"; //url to php that handles post requests
-String geturl = "/command_file.txt";           //url that echos commands from the website
-String query_string = "";                      //string that contains sensor data from the arduino
-int internet_command;                          //int read from web host
-WiFiClient client;                             //client that connects to server
-const long send_get_time_trigger = 2000;       //triggers after 10000 ms to run code
-const long send_post_time_trigger = 5000;      //triggers after 40000 ms to run code
-unsigned long send_get_previous_time = 0;      //keeps time before the recieve_bt_data code runs
-unsigned long send_post_previous_time = 0;     //keeps time before the package and send code runs
-int esp_error(int &);                          //Error handler for the esp module
-int recieve_query_string();                    //recieves the string that contains all the data info from the mega board
-int send_post_request();                       //connects to the server and sends a POST request to the posturl
-int send_get_request();                        //connects to the server and sends a GET request for the commands from the internet
-int descend_data_to_board();                   //sends that command down to the mega board
+const char *ssid = "Lens's iPhone";                  //hotspot info
+const char *password = "coraldefense";               //hotspot info
+const char *host = "coraldefense.000webhostapp.com"; //website host link
+const int httpPort = 80;                             //port used to send http request
+String posturl = "/recieve_arduino_data.php?";       //url to php that handles post requests
+String geturl = "/command_file.txt";                 //url that echos commands from the website
+String query_string = "";                            //string that contains sensor data from the arduino
+int internet_command;                                //int read from web host
+WiFiClient client;                                   //client that connects to server
+const long send_get_time_trigger = 2000;             //triggers after 10000 ms to run code
+const long send_post_time_trigger = 5000;            //triggers after 40000 ms to run code
+unsigned long send_get_previous_time = 0;            //keeps time before the recieve_bt_data code runs
+unsigned long send_post_previous_time = 0;           //keeps time before the package and send code runs
+int esp_error(int &);                                //Error handler for the esp module
+int recieve_query_string();                          //recieves the string that contains all the data info from the mega board
+int send_data_request();                             //connects to the server and sends a request to the posturl to send data to the website
+int send_get_request();                              //connects to the server and sends a request for the commands from the internet
+int descend_data_to_board();                         //sends that command down to the mega board
 void setup()
 {
     pinMode(LED_BUILTIN, OUTPUT); // Initialize the LED_BUILTIN pin as an output
@@ -27,7 +27,7 @@ void setup()
      would try to act as both a client and an access-point and could cause network-issues with other WiFi-devices and WiFi-network. */
     WiFi.mode(WIFI_STA);
     WiFi.begin(ssid, password);
-    while (WiFi.status() != WL_CONNECTED)
+    while (WiFi.status() != WL_CONNECTED) //don't run until connected to the internet
     {
         delay(500);
     }
@@ -39,7 +39,7 @@ void loop()
     //triggers the time to recieve a query string from the arduino board
     if (current_time - send_get_previous_time >= send_get_time_trigger)
     {
-        digitalWrite(LED_BUILTIN, LOW); // Turn the LED on (Note that LOW is the voltage level
+        digitalWrite(LED_BUILTIN, LOW); // Turn the LED on:note that LOW is the voltage level, easier to tell what is happening and when it is running functions
         if ((getcheck = send_get_request()) < 0)
         {
             esp_error(getcheck);
@@ -52,10 +52,10 @@ void loop()
     }
     if (current_time - send_post_previous_time >= send_post_time_trigger)
     {
-        digitalWrite(LED_BUILTIN, HIGH); // Turn the LED off by making the voltage HIGH
+        digitalWrite(LED_BUILTIN, HIGH); // Turn the LED off by making the voltage HIGH, easier to tell what is happening and when it is running functions
         if ((board_readcheck = recieve_query_string()) >= 0)
         {
-            if ((querycheck = send_post_request()) < 0)
+            if ((querycheck = send_data_request()) < 0)
             {
                 esp_error(querycheck);
             }
@@ -69,29 +69,30 @@ void loop()
 }
 int recieve_query_string()
 {
-    String ignore = mega_board.readStringUntil('!');
+    String ignore = mega_board.readStringUntil('!'); //char that prefixes the query string sent by the arduino
     query_string = mega_board.readString();
     Serial.println("---ignore");
     Serial.println(ignore);
-    query_string.toLowerCase();
-    query_string.replace(" ","");
-    query_string.replace("\r","");
-    query_string.replace("\n","");
+    query_string.toLowerCase();     //put it in lowercase
+    query_string.replace(" ", "");  //remove spaces
+    query_string.replace("\r", ""); //carriage returns and newlines cause errors when sent over as a request
+    query_string.replace("\n", "");
     Serial.println(query_string);
     return 1;
 }
 
-int send_post_request()
+int send_data_request()
 {
-    if(query_string.equals("")){
-      return -1;
-      }
+    if (query_string.equals(""))
+    {
+        return -1;
+    }
     if (!client.connect(host, httpPort))
     {
         return -26;
     }
-    String poststring=posturl+query_string;
-    Serial.println(String("--post")+poststring);
+    String poststring = posturl + query_string; //create the poststring because otherwise it fails to connect properly
+    Serial.println(String("--post") + poststring);
     client.print(String("GET ") + poststring + " HTTP/1.1\r\n" + "Host: " + host + "\r\n" + "Connection: close\r\n\r\n");
     unsigned long timeout = millis();
     while (client.available() == 0)
@@ -109,17 +110,17 @@ int send_post_request()
         char line = client.read();
         Serial.print(line);
     }
-    query_string ="";
+    query_string = "";
     client.stop();
     return 1;
 }
 int send_get_request()
 {
-    if (!client.connect(host, httpPort))
+    if (!client.connect(host, httpPort)) //if you can't connect throw a error
     {
         return -27;
     }
-    client.print(String("GET ") + geturl + " HTTP/1.1\r\n" + "Host: " + host + "\r\n" + "Connection: close\r\n\r\n");
+    client.print(String("GET ") + geturl + " HTTP/1.1\r\n" + "Host: " + host + "\r\n" + "Connection: close\r\n\r\n"); //post it to client
     unsigned long timeout = millis();
     while (client.available() == 0)
     {
@@ -131,7 +132,7 @@ int send_get_request()
     }
     while (client.available())
     {
-        String ignore = client.readStringUntil('#');
+        String ignore = client.readStringUntil('#'); // ignore the http reply until the command
         internet_command = client.parseInt();
     }
     client.stop();
@@ -141,7 +142,7 @@ int descend_data_to_board()
 {
     if (mega_board.availableForWrite())
     {
-        mega_board.print('#');
+        mega_board.print('#'); //preface with special char for internet commands
         mega_board.println(internet_command);
         return 1;
     }
