@@ -31,7 +31,7 @@ Web application version of CoralDefense. Sends and receives data from Arduino vi
 
 ### Sensor monitor
 ---------------------------
-*![alt text](/pictures/sensor monitor.gif.gif?raw=true)
+*![alt text](/pictures/sensor monitor.gif?raw=true)
 
 ### Sources and Important docs
 ---------------------------
