@@ -29,6 +29,10 @@ Web application version of CoralDefense. Sends and receives data from Arduino vi
 ---------------------------
 * Recieves sensor data from the arduino and sends to sensor tables. 
 
+### Sensor monitor
+---------------------------
+*![alt text](/pictures/sensormonitor.gif?raw=true)
+
 ### Sources and Important docs
 ---------------------------
 * Google drive with important presentations:https://drive.google.com/drive/folders/1LOZ6MqgfZt55XDYMcP-2p3SdXCsBt3-Y?usp=sharing
