@@ -50,5 +50,6 @@ Web application version of CoralDefense. Sends and receives data from Arduino vi
 * JQuery ready used to make sure page loads before running javascript:https://learn.jquery.com/using-jquery-core/document-ready/ 
 * Setinterval, used by sensor monitor:https://www.w3schools.com/jsref/met_win_setinterval.asp
 * JS onclick used by command buttons:https://www.w3schools.com/jsref/event_onclick.asp 
+* VsCode Arduino extension:https://marketplace.visualstudio.com/items?itemName=vsciot-vscode.vscode-arduino
 * Comm architecture:
 ![alt text](/pictures/commarchitecture.png?raw=true)
