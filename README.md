@@ -19,7 +19,7 @@ Web application version of CoralDefense. Sends and receives data from Arduino vi
 
 ### get_data.php
 ---------------
-* Returns live table data. redraws sensor monitor with new values, called by js embedded in index
+* gets newest data from livetable. redraws sensor monitor with new values, called by js embedded in index
 
 ### send_arduino_data.php
 ------------------------
@@ -31,7 +31,14 @@ Web application version of CoralDefense. Sends and receives data from Arduino vi
 
 ### Sensor monitor
 ---------------------------
-                             ![alt text](/pictures/sensormonitor.gif?raw=true)
+![alt text](/pictures/sensormonitor.gif?raw=true)
+* Linked using embedded JavaScript that uses AjAx's load function on a timer to run the "get_data.php" script
+
+### Command row
+---------------------------
+![alt text](/pictures/commandrow.gif?raw=true)
+* Each button has a invisible linked button, when the user clicks the visible on button a js script runs that calls send_arduino_data.php
+* The invisible buttons are used because when it was visible the buttons would deform and rather than fix this it was easier to run the js on invisible objects.
 
 ### Sources and Important docs
 ---------------------------
@@ -39,5 +46,9 @@ Web application version of CoralDefense. Sends and receives data from Arduino vi
 * Installing ESP8266 library to arduino ide:https://arduino-esp8266.readthedocs.io/en/latest/installing.html 
 * Arduino HTTP Requests:https://arduinogetstarted.com/tutorials/arduino-http-request
 * ESP8266 WiFi library examples:https://github.com/esp8266/Arduino/tree/master/libraries/ESP8266WiFi/examples
+* AjaX load documentation:https://api.jquery.com/load/ 
+* JQuery ready used to make sure page loads before running javascript:https://learn.jquery.com/using-jquery-core/document-ready/ 
+* Setinterval, used by sensor monitor:https://www.w3schools.com/jsref/met_win_setinterval.asp
+* JS onclick used by command buttons:https://www.w3schools.com/jsref/event_onclick.asp 
 * Comm architecture:
 ![alt text](/pictures/commarchitecture.png?raw=true)
