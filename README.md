@@ -36,4 +36,4 @@ Web application version of CoralDefense. Sends and receives data from Arduino vi
 * Arduino HTTP Requests:https://arduinogetstarted.com/tutorials/arduino-http-request
 * ESP8266 WiFi library examples:https://github.com/esp8266/Arduino/tree/master/libraries/ESP8266WiFi/examples
 * Comm architecture:
-![alt text](https://github.com/Keithkool69603/CoralDefense-Webapp/pictures/commarchitecture.png?raw=true)
+![alt text](/pictures/commarchitecture.png?raw=true)
